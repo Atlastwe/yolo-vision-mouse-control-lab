@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.idea/
+.vscode/
+.venv/
+venv/
+.env
+
+# Runtime output
+detect.json
+runs/
+output/
+
+# Models and generated inference artifacts
+models/
+*.pt
+*.engine
+*.onnx
+*.torchscript
+*.tflite
+
+# Optional third-party input libraries are installed separately.
+IbInputSimulator-*/
+*.dll
+*.sys
+*.cat
+

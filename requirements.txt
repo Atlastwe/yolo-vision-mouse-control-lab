@@ -1,0 +1,7 @@
+numpy>=1.24
+opencv-python>=4.8
+dxcam>=0.0.5
+pyautogui>=0.9.54
+pywin32>=306
+ultralytics>=8.3,<9
+
