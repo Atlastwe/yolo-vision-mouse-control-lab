@@ -168,25 +168,98 @@ Dependency check passed, including model loading.
 
 模型权重和推理引擎已被 `.gitignore` 排除，因此替换本地模型不会被普通的 `git add .` 上传到 GitHub。
 
-## 配置输出方式
+## 修改操纵方式
 
-输出配置位于 `mymain_app/config.py` 的 `MouseConfig`。发布版默认使用 PyAutoGUI：
+操纵方式配置位于 `mymain_app/config.py` 的 `MouseConfig`。项目实现了统一的相对移动接口，上层控制器始终输出 `dx, dy`，再由所选后端发送。
+
+### 使用 PyAutoGUI
+
+发布版默认使用 PyAutoGUI，不需要额外 DLL：
 
 ```python
 mode: str = "pyautogui"
-activation_key: int = 0x02
+pyautogui_pause_s: float = 0.0
+pyautogui_failsafe: bool = True
 ```
 
-`0x02` 是鼠标右键。程序运行时按住右键才会执行控制输出。
+如果只安装了 `ultralytics`，还需要补装 PyAutoGUI 和 Win32 支持：
 
-IbInputSimulator 是可选后端，仓库不分发它的 DLL。单独安装并确认 DLL 路径后，可改为：
+```powershell
+python -m pip install pyautogui pywin32
+```
+
+### 使用 IbInputSimulator
+
+IbInputSimulator 不是 PyPI 包，不能通过 `pip install`安装，因此没有把它写进 `requirements.txt`。
+
+- 项目主页：[Chaoses-Ib/IbInputSimulator](https://github.com/Chaoses-Ib/IbInputSimulator)
+- 下载页面：[IbInputSimulator Releases](https://github.com/Chaoses-Ib/IbInputSimulator/releases)
+
+下载并解压后，可以放到仓库根目录。以 `0.4.1` 为例：
+
+```text
+yolo-vision-mouse-control-lab/
+├─ IbInputSimulator-0.4.1/
+│  └─ Binding.AHK2/
+│     └─ IbInputSimulator.dll
+├─ mymain_app/
+└─ mymainproject.py
+```
+
+然后修改 `MouseConfig`：
 
 ```python
 mode: str = "ib"
-dll_path: Path = PROJECT_ROOT / "IbInputSimulator-0.4.1" / "Binding.AHK2" / "IbInputSimulator.dll"
+dll_path: Path = (
+    PROJECT_ROOT
+    / "IbInputSimulator-0.4.1"
+    / "Binding.AHK2"
+    / "IbInputSimulator.dll"
+)
+preferred_send_type: int = 6  # LogitechGHubNew
+fallback_send_type: int = 1   # Windows SendInput
 ```
 
-启动日志会显示最终使用的输出方式。如果 IbInput 首选后端初始化失败，代码会尝试配置中的回退后端。
+如果下载的版本目录不是 `IbInputSimulator-0.4.1`，应把 `dll_path` 中的目录名改成实际名称。启动日志会显示最终启用的后端：
+
+```text
+IbMouseInput/LogitechGHubNew
+```
+
+如果首选后端初始化失败，程序会尝试 `fallback_send_type`。看到下面的日志表示已经退回 Windows SendInput：
+
+```text
+IbMouseInput/SendInput
+```
+
+IbInputSimulator 目录和 DLL 已被 `.gitignore` 排除，不会随普通 Git 提交上传。
+
+### 修改激活按键
+
+`activation_key` 使用 Windows Virtual-Key 键码。默认值 `0x02` 是鼠标右键，程序只在按住该键时执行控制输出：
+
+```python
+activation_key: int = 0x02
+```
+
+常用键码：
+
+| 按键 | 键码 |
+| --- | --- |
+| 鼠标左键 | `0x01` |
+| 鼠标右键 | `0x02` |
+| 鼠标中键 | `0x04` |
+| 鼠标侧键 1 | `0x05` |
+| 鼠标侧键 2 | `0x06` |
+| Shift | `0x10` |
+| Ctrl | `0x11` |
+| Alt | `0x12` |
+
+例如改为按住鼠标侧键 1 时启用：
+
+```python
+activation_key: int = 0x05
+```
 
 ## 运行方法
 
