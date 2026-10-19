@@ -20,6 +20,22 @@
 - PyAutoGUI 与可选 IbInputSimulator 输出后端
 - 跟踪、目标选择和运动控制单元测试
 
+## 两种运行模式
+
+这个入口同时支持**独立运行**和**作为 OBS Python 脚本运行**，OBS 不是独立运行模式的必需依赖。
+
+```text
+直接执行 mymainproject.py
+  └─ 找不到 obspython
+     └─ 使用 DXCam 获取主显示器画面
+
+通过 OBS 加载 mymainproject.py
+  └─ OBS 提供 obspython
+     └─ 读取用户指定的 OBS Source 画面
+```
+
+程序会根据 `obspython` 是否存在自动选择模式，不需要手动修改源码。
+
 ## 环境要求
 
 - Windows 10 或 Windows 11
@@ -261,15 +277,17 @@ activation_key: int = 0x02
 activation_key: int = 0x05
 ```
 
-## 运行方法
+## 独立运行
 
-先检查环境和模型：
+独立运行不需要安装或启动 OBS。程序使用 DXCam 获取主显示器画面，再按照 `DetectionConfig` 中的 `crop_width_ratio` 和 `crop_height_ratio` 截取屏幕中心区域进行推理。
+
+在仓库根目录打开 PowerShell，激活安装过依赖的 Python 环境，然后检查环境和模型：
 
 ```powershell
 python mymainproject.py --check --no-elevate
 ```
 
-正常运行：
+检查通过后直接启动：
 
 ```powershell
 python mymainproject.py --no-elevate
@@ -281,6 +299,12 @@ python mymainproject.py --no-elevate
 python mymainproject.py --no-preview --no-elevate
 ```
 
+独立模式的调用路径为：
+
+```text
+Python入口 → DXCam桌面采集 → YOLO/ByteTrack → 控制器 → 所选输出后端
+```
+
 操作方式：
 
 - 按住鼠标右键：启用控制输出
@@ -289,6 +313,68 @@ python mymainproject.py --no-preview --no-elevate
 - 无预览运行时按 `Ctrl+C`：停止程序
 
 省略 `--no-elevate` 时，程序会尝试请求管理员权限。
+
+## 作为 OBS 脚本运行
+
+OBS 模式不使用 DXCam，而是从 OBS 中读取一个已存在的 Source。入口脚本必须和 `mymain_app` 文件夹保持当前相对位置，不能只把单独一个 `mymainproject.py` 复制到别处。
+
+目录应保持为：
+
+```text
+yolo-vision-mouse-control-lab/
+├─ mymain_app/
+├─ models/
+│  └─ best.engine
+└─ mymainproject.py
+```
+
+### 1. 配置 OBS 的 Python 环境
+
+OBS 只能加载其当前版本支持的 Python 版本。准备一个兼容的 Python 安装，并使用该解释器安装项目依赖：
+
+```powershell
+C:\Path\To\Python\python.exe -m pip install -r requirements.txt
+```
+
+然后在 OBS 中打开：
+
+```text
+工具 → 脚本 → Python 设置
+```
+
+把 Python 安装路径设置为上一步解释器所在目录。依赖必须安装到 OBS 实际使用的这个 Python 中；仅安装到另一个 Conda 或虚拟环境不会自动被 OBS 看见。
+
+### 2. 准备 OBS Source
+
+在 OBS 的“来源”面板中创建一个来源，例如“游戏采集”“窗口采集”或“显示器采集”，并记住它在来源面板中的**完整名称**。
+
+### 3. 加载脚本
+
+打开：
+
+```text
+工具 → 脚本 → Python 脚本
+```
+
+点击 `+`，选择仓库根目录中的 `mymainproject.py`。脚本成功加载后会显示这些属性：
+
+- `OBS source name`：填写上一步的来源名称，必须完全一致
+- `Auto start`：加载脚本后自动启动
+- `Enable recognition inspector`：启用识别预览
+- `Show inspector at startup`：启动时显示预览窗口
+- `Inspector window width`：预览窗口宽度
+- `Start`：手动启动
+- `Stop`：手动停止
+
+建议第一次使用时不要勾选 `Auto start`，先填写并确认 `OBS source name`，再点击 `Start`。如果名称为空或拼写不一致，日志会显示 `OBS source not found`。
+
+OBS 模式的调用路径为：
+
+```text
+OBS Source → OBS纹理读取 → YOLO/ByteTrack → 控制器 → 所选输出后端
+```
+
+在 OBS 模式中不要再从 PowerShell执行 `python mymainproject.py`；脚本的加载、启动、停止和卸载都由 OBS 调用。
 
 ## 测试
 
@@ -317,6 +403,14 @@ python -m unittest discover -s tests -v
 ```powershell
 python -m pip install -r requirements.txt
 ```
+
+### OBS 加载脚本时提示缺少模块
+
+这通常表示依赖安装到了另一个 Python 环境。确认 OBS“Python 设置”中的路径，然后使用该目录下的 `python.exe -m pip install -r requirements.txt`重新安装。
+
+### `OBS source not found`
+
+确认 `OBS source name` 与 OBS“来源”面板中的名称逐字一致，并且该来源尚未被删除。
 
 ## 目录结构
 
