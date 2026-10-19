@@ -36,14 +36,27 @@ git clone https://github.com/Atlastwe/yolo-vision-mouse-control-lab.git
 cd yolo-vision-mouse-control-lab
 ```
 
-创建虚拟环境并安装依赖：
+创建虚拟环境：
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
+```
+
+如果只需要加载 YOLO 模型进行普通推理，安装 Ultralytics 即可：
+
+```powershell
+python -m pip install ultralytics
+```
+
+运行本仓库的完整实时程序，还需要屏幕采集、鼠标输出、Win32 按键检测和跟踪相关依赖：
+
+```powershell
 python -m pip install -r requirements.txt
 ```
+
+`numpy`、`opencv-python` 和 PyTorch 会作为 Ultralytics 的依赖安装，因此没有在本仓库中重复声明。`dxcam`、`pyautogui` 和 `pywin32` 是本项目外围功能使用的直接依赖；`lap` 用于启用 ByteTrack 数据关联。
 
 创建模型目录：
 
