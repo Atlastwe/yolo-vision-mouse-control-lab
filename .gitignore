@@ -26,3 +26,7 @@ IbInputSimulator-*/
 *.sys
 *.cat
 
+# PyInstaller output
+/build/
+/dist/
+

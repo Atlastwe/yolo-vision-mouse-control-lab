@@ -376,6 +376,90 @@ OBS Source → OBS纹理读取 → YOLO/ByteTrack → 控制器 → 所选输出
 
 在 OBS 模式中不要再从 PowerShell执行 `python mymainproject.py`；脚本的加载、启动、停止和卸载都由 OBS 调用。
 
+## 打包为 EXE
+
+EXE 只支持独立 DXCam 模式，不能作为 OBS Python 脚本加载。OBS 模式仍应使用 `mymainproject.py`；要制作可由 OBS 直接安装的二进制组件，需要另行开发原生 OBS 插件。
+
+本项目使用 PyInstaller 的 `onedir`模式。Torch、CUDA、TensorRT 和 Ultralytics 包含大量动态库，目录模式比单文件模式更容易验证和排查。
+
+### 1. 安装构建依赖
+
+在能够正常运行项目的 Python 环境中执行：
+
+```powershell
+python -m pip install -r requirements-build.txt
+```
+
+### 2. 执行构建脚本
+
+只构建程序，不复制模型和 IbInput：
+
+```powershell
+.\build_exe.ps1 -Python "python"
+```
+
+构建并复制 TensorRT 模型：
+
+```powershell
+.\build_exe.ps1 `
+  -Python "D:\anaconda\envs\yolo\python.exe" `
+  -ModelPath "D:\path\to\best.engine"
+```
+
+同时复制 IbInput DLL：
+
+```powershell
+.\build_exe.ps1 `
+  -Python "D:\anaconda\envs\yolo\python.exe" `
+  -ModelPath "D:\path\to\best.engine" `
+  -IbInputDllPath "D:\path\to\IbInputSimulator.dll"
+```
+
+脚本会依次运行单元测试、执行 PyInstaller、补齐 Conda MKL 运行库，并将外部资源放到程序预期目录。
+
+### 3. 验证成品
+
+构建结果位于：
+
+```text
+dist/YoloVisionControl/
+```
+
+检查依赖和模型加载：
+
+```powershell
+.\dist\YoloVisionControl\YoloVisionControl.exe --check --no-elevate
+```
+
+正常运行：
+
+```powershell
+.\dist\YoloVisionControl\YoloVisionControl.exe --no-elevate
+```
+
+无预览运行：
+
+```powershell
+.\dist\YoloVisionControl\YoloVisionControl.exe --no-preview --no-elevate
+```
+
+### 4. 分发目录
+
+必须分发整个 `dist/YoloVisionControl`目录，不能只复制 `YoloVisionControl.exe`。推荐结构：
+
+```text
+YoloVisionControl/
+├─ YoloVisionControl.exe
+├─ _internal/
+├─ models/
+│  └─ best.engine
+└─ IbInputSimulator-0.4.1/
+   └─ Binding.AHK2/
+      └─ IbInputSimulator.dll
+```
+
+模型和 IbInput DLL 保持外置，替换它们时不需要重新构建 EXE。CUDA 版 PyTorch 和 TensorRT 会使目录体积达到数 GB，这是 GPU 运行库造成的。
+
 ## 测试
 
 ```powershell
