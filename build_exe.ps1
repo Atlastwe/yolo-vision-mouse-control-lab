@@ -56,7 +56,7 @@ try {
     }
 
     Write-Host "Build completed: $DistRoot"
-    Write-Host "Validate with: .\dist\YoloVisionControl\YoloVisionControl.exe --check --no-elevate"
+    Write-Host "Launch with: .\dist\YoloVisionControl\YoloVisionControl.exe"
 }
 finally {
     Pop-Location

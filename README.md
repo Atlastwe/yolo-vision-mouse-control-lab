@@ -425,23 +425,22 @@ python -m pip install -r requirements-build.txt
 dist/YoloVisionControl/
 ```
 
-检查依赖和模型加载：
+双击 `YoloVisionControl.exe`，或从 PowerShell 启动：
 
 ```powershell
-.\dist\YoloVisionControl\YoloVisionControl.exe --check --no-elevate
+.\dist\YoloVisionControl\YoloVisionControl.exe
 ```
 
-正常运行：
+程序会打开常驻控制面板，不再依赖命令行窗口。界面中可以：
 
-```powershell
-.\dist\YoloVisionControl\YoloVisionControl.exe --no-elevate
-```
+- 浏览并切换 `.engine`、`.pt` 或 `.onnx` 模型；
+- 切换 `pyautogui` 与 `ib` 输出方式；
+- 选择激活按键，并控制是否显示识别预览；
+- 点击“检查环境”验证依赖和模型是否能加载；
+- 点击“启动”或“停止”控制后台流水线；
+- 在“运行日志”中查看初始化进度、当前鼠标后端和错误堆栈。
 
-无预览运行：
-
-```powershell
-.\dist\YoloVisionControl\YoloVisionControl.exe --no-preview --no-elevate
-```
+建议首次运行先点“检查环境”，显示“检查通过”后再启动。即使初始化失败，控制面板也会保持打开，并在日志区显示原因。
 
 ### 4. 分发目录
 
@@ -459,6 +458,8 @@ YoloVisionControl/
 ```
 
 模型和 IbInput DLL 保持外置，替换它们时不需要重新构建 EXE。CUDA 版 PyTorch 和 TensorRT 会使目录体积达到数 GB，这是 GPU 运行库造成的。
+
+需要使用命令行参数时，仍可通过源码入口 `python mymainproject.py ...` 运行；打包后的 EXE 是桌面面板入口，不解析源码入口的命令行参数。
 
 ## 测试
 
