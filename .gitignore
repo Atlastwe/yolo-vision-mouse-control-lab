@@ -29,4 +29,5 @@ IbInputSimulator-*/
 # PyInstaller output
 /build/
 /dist/
+/release/
 

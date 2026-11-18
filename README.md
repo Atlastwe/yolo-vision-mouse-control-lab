@@ -461,6 +461,23 @@ YoloVisionControl/
 
 需要使用命令行参数时，仍可通过源码入口 `python mymainproject.py ...` 运行；打包后的 EXE 是桌面面板入口，不解析源码入口的命令行参数。
 
+### 5. 制作 GitHub Release 附件
+
+不要把 `dist` 目录提交到 Git。完成构建后，用 7-Zip 生成一个便于下载的发布包：
+
+```powershell
+.\package_release.ps1 -Version "0.1.0"
+```
+
+输出位于 `release/`：
+
+```text
+YoloVisionControl-v0.1.0-windows-x64.7z
+YoloVisionControl-v0.1.0-windows-x64.7z.sha256
+```
+
+压缩包内只有一个顶层 `YoloVisionControl` 文件夹。下载者解压后直接运行其中的 `YoloVisionControl.exe`；`_internal` 是程序运行库，不能单独删除。发布包和校验文件应上传到 GitHub 的 **Releases**，而不是放在仓库源码文件列表中。
+
 ## 测试
 
 ```powershell
