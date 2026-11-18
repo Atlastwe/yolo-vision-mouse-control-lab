@@ -15,7 +15,7 @@ PROJECT_ROOT = (
 @dataclass(slots=True)
 class MouseConfig:
     # Input backend: "ib" (IbInputSimulator) or "pyautogui".
-    mode: str = "pyautogui"
+    mode: str = "ib"
     dll_path: Path = PROJECT_ROOT / "IbInputSimulator-0.4.1" / "Binding.AHK2" / "IbInputSimulator.dll"
     activation_key: int = 0x02
     # IbInputSimulator: 6 = LogitechGHubNew, 1 = Windows SendInput.

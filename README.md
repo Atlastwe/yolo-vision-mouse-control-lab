@@ -190,7 +190,7 @@ Dependency check passed, including model loading.
 
 ### 使用 PyAutoGUI
 
-发布版默认使用 PyAutoGUI，不需要额外 DLL：
+PyAutoGUI 是不需要额外 DLL 的备用输出方式。需要使用时，将配置改为：
 
 ```python
 mode: str = "pyautogui"
@@ -208,6 +208,13 @@ python -m pip install pyautogui pywin32
 
 IbInputSimulator 不是 PyPI 包，不能通过 `pip install`安装，因此没有把它写进 `requirements.txt`。
 
+发布版默认使用 IbInputSimulator，并默认以鼠标右键作为激活键：
+
+```python
+mode: str = "ib"
+activation_key: int = 0x02
+```
+
 - 项目主页：[Chaoses-Ib/IbInputSimulator](https://github.com/Chaoses-Ib/IbInputSimulator)
 - 下载页面：[IbInputSimulator Releases](https://github.com/Chaoses-Ib/IbInputSimulator/releases)
 
@@ -222,7 +229,7 @@ yolo-vision-mouse-control-lab/
 └─ mymainproject.py
 ```
 
-然后修改 `MouseConfig`：
+源码运行时应确认 `MouseConfig` 中的路径与实际 DLL 位置一致：
 
 ```python
 mode: str = "ib"
@@ -235,6 +242,23 @@ dll_path: Path = (
 preferred_send_type: int = 6  # LogitechGHubNew
 fallback_send_type: int = 1   # Windows SendInput
 ```
+
+桌面控制面板可以直接选择具体发送类型：
+
+- `LogitechGHubNew`：适用于较新的 G HUB 虚拟设备；
+- `LogitechLegacy`：使用旧版 Logitech 5 字节鼠标报告；
+- `SendInput`：仍通过 IbInputSimulator API 调用，但底层使用 Windows SendInput。
+
+某些 G HUB 版本会出现“初始化成功，但设备移动没有实际效果”。此时程序无法仅根据初始化返回值自动判断，应由用户在控制面板中依次尝试 `LogitechLegacy` 和 `SendInput`。启动后右上角显示的是最终实际启用的后端。
+
+调试日志会记录以下关键状态：
+
+```text
+[debug] activation key pressed
+[debug] mouse command: dx=12 dy=-4 accepted=True
+```
+
+`accepted=True` 只表示 IbInputSimulator 接受了调用；如果光标或游戏视角仍未移动，问题位于所选发送类型与当前 G HUB/目标程序的兼容路径，而不是右键检测或控制器没有发出命令。
 
 如果下载的版本目录不是 `IbInputSimulator-0.4.1`，应把 `dll_path` 中的目录名改成实际名称。启动日志会显示最终启用的后端：
 

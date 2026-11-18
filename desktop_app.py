@@ -22,6 +22,11 @@ ACTIVATION_KEYS = {
     "Ctrl": 0x11,
     "Alt": 0x12,
 }
+IB_SEND_TYPES = {
+    "LogitechGHubNew": 6,
+    "LogitechLegacy": 2,
+    "SendInput": 1,
+}
 
 
 class QueueStream:
@@ -49,6 +54,12 @@ class ControlPanel:
 
         self.model_path = tk.StringVar(value=str(self.config.detection.model_path))
         self.mouse_mode = tk.StringVar(value=self.config.mouse.mode)
+        self.ib_send_type = tk.StringVar(
+            value=next(
+                (name for name, value in IB_SEND_TYPES.items() if value == self.config.mouse.preferred_send_type),
+                "LogitechGHubNew",
+            )
+        )
         self.activation_key = tk.StringVar(value="鼠标右键")
         self.show_preview = tk.BooleanVar(value=True)
         self.status_text = tk.StringVar(value="已停止")
@@ -120,9 +131,10 @@ class ControlPanel:
         options.grid(row=1, column=1, columnspan=2, sticky="ew", pady=(12, 0))
         options.columnconfigure(4, weight=1)
         self.mode_box = ttk.Combobox(
-            options, textvariable=self.mouse_mode, values=("pyautogui", "ib"), state="readonly", width=18
+            options, textvariable=self.mouse_mode, values=("ib", "pyautogui"), state="readonly", width=18
         )
         self.mode_box.grid(row=0, column=0, sticky="w")
+        self.mode_box.bind("<<ComboboxSelected>>", lambda _event: self._sync_backend_controls())
 
         ttk.Label(options, text="激活按键").grid(row=0, column=1, padx=(22, 8))
         self.key_box = ttk.Combobox(
@@ -136,6 +148,24 @@ class ControlPanel:
         ttk.Checkbutton(options, text="显示识别预览", variable=self.show_preview).grid(
             row=0, column=3, sticky="e", padx=(22, 0)
         )
+
+        ttk.Label(settings, text="IbInput 发送类型").grid(
+            row=2, column=0, sticky="w", pady=(12, 0), padx=(0, 10)
+        )
+        self.ib_send_type_box = ttk.Combobox(
+            settings,
+            textvariable=self.ib_send_type,
+            values=tuple(IB_SEND_TYPES),
+            state="readonly",
+            width=22,
+        )
+        self.ib_send_type_box.grid(row=2, column=1, sticky="w", pady=(12, 0))
+        ttk.Label(
+            settings,
+            text="初始化成功但无移动时，请依次尝试 Legacy 和 SendInput",
+            style="Subtitle.TLabel",
+        ).grid(row=2, column=2, sticky="e", pady=(12, 0))
+        self._sync_backend_controls()
 
         actions = ttk.Frame(container)
         actions.grid(row=2, column=0, sticky="ew", pady=14)
@@ -224,8 +254,13 @@ class ControlPanel:
     def _apply_settings(self) -> None:
         self.config.detection.model_path = Path(self.model_path.get()).expanduser().resolve()
         self.config.mouse.mode = self.mouse_mode.get()
+        self.config.mouse.preferred_send_type = IB_SEND_TYPES[self.ib_send_type.get()]
         self.config.mouse.activation_key = ACTIVATION_KEYS[self.activation_key.get()]
         self.config.output.show_preview = self.show_preview.get()
+
+    def _sync_backend_controls(self) -> None:
+        state = "readonly" if self.mouse_mode.get() == "ib" and not self.busy else "disabled"
+        self.ib_send_type_box.configure(state=state)
 
     @staticmethod
     def _load_runtime():
@@ -246,6 +281,7 @@ class ControlPanel:
         self.start_button.configure(state=state)
         self.mode_box.configure(state="disabled" if value else "readonly")
         self.key_box.configure(state="disabled" if value else "readonly")
+        self._sync_backend_controls()
         self.model_entry.configure(state=state)
 
     def check_environment(self) -> None:

@@ -82,6 +82,12 @@ def make_detector():
 
 
 class ModularWorkflowTests(unittest.TestCase):
+    def test_ibinput_is_the_default_mouse_backend(self):
+        config = AppConfig().mouse
+        self.assertEqual(config.mode, "ib")
+        self.assertEqual(config.activation_key, 0x02)
+        self.assertEqual(config.preferred_send_type, 6)
+
     def test_unknown_mouse_mode_is_rejected(self):
         config = AppConfig().mouse
         config.mode = "unknown"

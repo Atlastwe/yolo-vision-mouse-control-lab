@@ -150,6 +150,9 @@ class Pipeline:
             started_at = time.perf_counter()
             pressed = self.mouse.is_activation_pressed()
             detection, arrival_time, target = self.state.snapshot()
+            if pressed != was_pressed:
+                state = "pressed" if pressed else "released"
+                self.logger.log(f"activation key {state}")
             if detection is not None and detection.t_capture != last_capture_time:
                 measured_position = np.array([detection.x, detection.y], dtype=np.float64)
                 target_changed = (
@@ -202,11 +205,18 @@ class Pipeline:
                     dx = int(np.rint(movement[0]))
                     dy = int(np.rint(movement[1]))
                     movement_remainder = movement - np.array([dx, dy], dtype=np.float64)
-                    if (dx or dy) and not self.mouse.move_relative(dx, dy):
-                        self.logger.every("mouse_move", f"mouse move failed: dx={dx} dy={dy}")
+                    if dx or dy:
+                        accepted = self.mouse.move_relative(dx, dy)
+                        self.logger.every(
+                            "mouse_command",
+                            f"mouse command: dx={dx} dy={dy} accepted={accepted}",
+                        )
             else:
                 controller.decay_to_stop()
                 movement_remainder.fill(0.0)
+                if pressed:
+                    reason = "no detection" if detection is None else f"stale target age={age:.3f}s"
+                    self.logger.every("mouse_idle", f"activation held, no movement: {reason}")
                 if age > max_age and last_target_position is not None:
                     estimator.reset()
                     smoother.reset()
