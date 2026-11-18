@@ -2,6 +2,12 @@
 
 这是一个模块化的 Windows 实时视觉控制实验项目，将屏幕采集、YOLO 推理、ByteTrack 跟踪、目标选择、运动预测、控制器和输出后端拆分为可独立测试的模块。
 
+## 下载 Windows 版
+
+不需要配置 Python 的用户，请从 [GitHub Releases](https://github.com/Atlastwe/yolo-vision-mouse-control-lab/releases/latest) 下载 `YoloVisionControl-*-windows-x64.7z`，完整解压后运行 `YoloVisionControl.exe`。
+
+GitHub 的 **Code → Download ZIP** 下载的是源码，不包含可运行 EXE。Windows 成品、版本说明和 SHA-256 校验文件统一放在 Releases 页面。
+
 仓库仅包含应用源码、测试、依赖清单和使用文档。模型、数据集、运行输出、第三方 DLL、驱动文件以及本地 IDE 配置均不会上传。
 
 本项目用于离线实验，以及你拥有的软件中的无障碍或相机控制功能。接入自制游戏时，推荐把控制器输出连接到游戏原生 Camera Controller，而不是系统级鼠标接口。
