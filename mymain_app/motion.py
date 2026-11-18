@@ -151,7 +151,8 @@ class VisualServoController:
             + self.config.kv * target_velocity
             + self.config.ki * self.integral
         )
-        command *= self.speed_scale(distance)
+        speed_multiplier = float(np.clip(self.config.speed_multiplier, 0.1, 3.0))
+        command *= self.speed_scale(distance) * speed_multiplier
         return self.motion.step(command, dt)
 
     def decay_to_stop(self) -> None:

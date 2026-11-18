@@ -138,6 +138,21 @@ class ModularWorkflowTests(unittest.TestCase):
         self.assertLess(middle, far)
         self.assertEqual(far, 1.0)
 
+    def test_speed_multiplier_scales_controller_command(self):
+        slow_config = AppConfig().control
+        slow_config.speed_multiplier = 0.5
+        slow_config.jerk_max = slow_config.acceleration_max = slow_config.velocity_max = 1e12
+        fast_config = AppConfig().control
+        fast_config.speed_multiplier = 2.0
+        fast_config.jerk_max = fast_config.acceleration_max = fast_config.velocity_max = 1e12
+        offset = np.array([40.0, 0.0])
+        target_velocity = np.zeros(2)
+
+        slow = VisualServoController(slow_config).step(offset, target_velocity, 0.01)
+        fast = VisualServoController(fast_config).step(offset, target_velocity, 0.01)
+
+        self.assertGreater(np.linalg.norm(fast), np.linalg.norm(slow))
+
     def test_controller_hard_stops_inside_stop_radius(self):
         config = AppConfig().control
         controller = VisualServoController(config)

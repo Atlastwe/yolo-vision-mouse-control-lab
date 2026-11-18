@@ -51,6 +51,8 @@ class DetectionConfig:
 @dataclass(slots=True)
 class ControlConfig:
     frequency_hz: float = 300.0
+    # Overall live-tuning multiplier applied before motion limiting.
+    speed_multiplier: float = 1.0
     total_latency_s: float = 0.050
     prediction_max_s: float = 0.12
     detection_max_age_s: float = 0.18

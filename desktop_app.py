@@ -61,6 +61,8 @@ class ControlPanel:
             )
         )
         self.activation_key = tk.StringVar(value="鼠标右键")
+        self.speed_multiplier = tk.DoubleVar(value=self.config.control.speed_multiplier)
+        self.speed_text = tk.StringVar(value=f"{self.config.control.speed_multiplier:.2f}x")
         self.show_preview = tk.BooleanVar(value=True)
         self.status_text = tk.StringVar(value="已停止")
         self.backend_text = tk.StringVar(value="尚未初始化")
@@ -74,8 +76,8 @@ class ControlPanel:
 
     def _configure_window(self) -> None:
         self.root.title("YOLO Vision Control")
-        self.root.geometry("940x680")
-        self.root.minsize(780, 560)
+        self.root.geometry("940x730")
+        self.root.minsize(780, 610)
         self.root.configure(bg="#f4f6f8")
 
         style = ttk.Style(self.root)
@@ -167,6 +169,39 @@ class ControlPanel:
         ).grid(row=2, column=2, sticky="e", pady=(12, 0))
         self._sync_backend_controls()
 
+        ttk.Label(settings, text="移动速度").grid(
+            row=3, column=0, sticky="w", pady=(12, 0), padx=(0, 10)
+        )
+        speed_controls = ttk.Frame(settings)
+        speed_controls.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(12, 0))
+        speed_controls.columnconfigure(0, weight=1)
+        self.speed_scale = ttk.Scale(
+            speed_controls,
+            from_=0.1,
+            to=3.0,
+            variable=self.speed_multiplier,
+            command=self._on_speed_change,
+        )
+        self.speed_scale.grid(row=0, column=0, sticky="ew")
+        self.speed_scale.bind("<ButtonRelease-1>", self._announce_speed)
+        self.speed_spinbox = ttk.Spinbox(
+            speed_controls,
+            from_=0.1,
+            to=3.0,
+            increment=0.05,
+            textvariable=self.speed_multiplier,
+            width=7,
+            format="%.2f",
+            command=self._on_speed_change,
+        )
+        self.speed_spinbox.grid(row=0, column=1, padx=(12, 5))
+        self.speed_spinbox.bind("<Return>", self._announce_speed)
+        self.speed_spinbox.bind("<FocusOut>", self._announce_speed)
+        ttk.Label(speed_controls, textvariable=self.speed_text, width=7).grid(row=0, column=2)
+        ttk.Label(speed_controls, text="运行中可实时调节", style="Subtitle.TLabel").grid(
+            row=0, column=3, padx=(16, 0)
+        )
+
         actions = ttk.Frame(container)
         actions.grid(row=2, column=0, sticky="ew", pady=14)
         actions.columnconfigure(3, weight=1)
@@ -256,7 +291,31 @@ class ControlPanel:
         self.config.mouse.mode = self.mouse_mode.get()
         self.config.mouse.preferred_send_type = IB_SEND_TYPES[self.ib_send_type.get()]
         self.config.mouse.activation_key = ACTIVATION_KEYS[self.activation_key.get()]
+        self.config.control.speed_multiplier = self._validated_speed_multiplier()
         self.config.output.show_preview = self.show_preview.get()
+
+    def _validated_speed_multiplier(self) -> float:
+        value = float(self.speed_multiplier.get())
+        if not 0.1 <= value <= 3.0:
+            raise ValueError("移动速度必须在 0.10x 到 3.00x 之间")
+        return value
+
+    def _on_speed_change(self, _value=None) -> None:
+        try:
+            value = self._validated_speed_multiplier()
+        except (tk.TclError, ValueError):
+            return
+        self.config.control.speed_multiplier = value
+        self.speed_text.set(f"{value:.2f}x")
+
+    def _announce_speed(self, _event=None) -> None:
+        try:
+            value = self._validated_speed_multiplier()
+        except (tk.TclError, ValueError) as exc:
+            messagebox.showerror("参数错误", str(exc))
+            return
+        self._on_speed_change()
+        print(f"[config] 移动速度已调整为 {value:.2f}x", flush=True)
 
     def _sync_backend_controls(self) -> None:
         state = "readonly" if self.mouse_mode.get() == "ib" and not self.busy else "disabled"
@@ -283,6 +342,8 @@ class ControlPanel:
         self.key_box.configure(state="disabled" if value else "readonly")
         self._sync_backend_controls()
         self.model_entry.configure(state=state)
+        self.speed_scale.configure(state=state)
+        self.speed_spinbox.configure(state=state)
 
     def check_environment(self) -> None:
         if self.busy:
